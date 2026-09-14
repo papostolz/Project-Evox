@@ -1,0 +1,1149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>Building Designer</title>
+<link href="https://cdnjs.cloudflare.com/ajax/libs/mapbox-gl/3.11.0/mapbox-gl.css" rel="stylesheet" />
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mapbox-gl/3.11.0/mapbox-gl.js"></script>
+<style>
+  :root{
+    --ink:#12131a;
+    --panel:#181a24;
+    --panel-2:#20222e;
+    --line:#2c2f3d;
+    --text:#e8e9ee;
+    --muted:#8d90a3;
+    --accent:#f0a34e;
+    --accent-ink:#1c1305;
+    --good:#5fbf8e;
+    --danger:#e0667a;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, Roboto, sans-serif;
+  }
+  *{ box-sizing: border-box; }
+  html,body{ margin:0; height:100%; background:var(--ink); color:var(--text); }
+  #app{ display:flex; height:100vh; width:100vw; overflow:hidden; }
+
+  #map{ position:relative; flex:1; min-width:0; }
+  #map .mapboxgl-ctrl-logo{ opacity:.55; }
+
+  /* ---- floating overlays on the map ---- */
+  .banner{
+    position:absolute; top:16px; left:50%; transform:translateX(-50%);
+    background:rgba(24,26,36,.92); border:1px solid var(--line);
+    padding:10px 16px; border-radius:10px; font-size:13.5px;
+    display:flex; align-items:center; gap:12px; z-index:5;
+    box-shadow:0 6px 24px rgba(0,0,0,.35);
+  }
+  .banner strong{ color:var(--accent); font-weight:600; }
+  .banner button{
+    background:none; border:1px solid var(--line); color:var(--muted);
+    padding:4px 10px; border-radius:6px; font-size:12px; cursor:pointer;
+  }
+  .banner button:hover{ color:var(--text); border-color:var(--muted); }
+
+  .token-gate{
+    position:absolute; inset:0; z-index:20; display:flex; align-items:center; justify-content:center;
+    background:radial-gradient(circle at 30% 20%, #23283a, var(--ink));
+  }
+  .token-card{
+    width:360px; background:var(--panel); border:1px solid var(--line); border-radius:14px;
+    padding:22px; box-shadow:0 20px 60px rgba(0,0,0,.5);
+  }
+  .token-card h2{ margin:0 0 6px; font-size:17px; }
+  .token-card p{ margin:0 0 16px; color:var(--muted); font-size:13px; line-height:1.5; }
+
+  /* ---- sidebar ---- */
+  #sidebar{
+    width:340px; flex-shrink:0; background:var(--panel); border-left:1px solid var(--line);
+    display:flex; flex-direction:column; overflow-y:auto;
+  }
+  .side-section{ padding:16px 18px; border-bottom:1px solid var(--line); }
+  .side-section h3{ margin:0 0 12px; font-size:11px; letter-spacing:.04em; color:var(--muted); font-weight:600; }
+
+  label{ display:block; font-size:12.5px; color:var(--muted); margin-bottom:4px; }
+  input[type="text"], input[type="number"], select{
+    width:100%; background:var(--panel-2); border:1px solid var(--line); color:var(--text);
+    padding:7px 9px; border-radius:7px; font-size:13px; margin-bottom:12px;
+  }
+  input[type="range"]{ width:100%; accent-color:var(--accent); margin-bottom:2px; }
+  .range-row{ display:flex; align-items:center; gap:10px; margin-bottom:12px; }
+  .range-row input[type="range"]{ margin:0; flex:1; }
+  .range-row .val{ width:48px; text-align:right; font-size:12.5px; color:var(--text); flex-shrink:0; }
+
+  input[type="color"]{
+    -webkit-appearance:none; appearance:none; width:100%; height:36px; border:1px solid var(--line);
+    border-radius:7px; background:none; padding:0; margin-bottom:12px; cursor:pointer;
+  }
+  input[type="color"]::-webkit-color-swatch-wrapper{ padding:3px; }
+  input[type="color"]::-webkit-color-swatch{ border-radius:5px; border:none; }
+
+  .btn{
+    width:100%; padding:10px 12px; border-radius:8px; border:1px solid var(--line);
+    background:var(--panel-2); color:var(--text); font-size:13.5px; font-weight:500;
+    cursor:pointer; margin-bottom:8px; transition:border-color .15s, background .15s;
+  }
+  .btn:hover{ border-color:var(--muted); }
+  .btn:disabled{ opacity:.4; cursor:not-allowed; }
+  .btn-primary{ background:var(--accent); border-color:var(--accent); color:var(--accent-ink); font-weight:600; }
+  .btn-primary:hover{ filter:brightness(1.06); border-color:var(--accent); }
+  .btn-danger{ color:var(--danger); }
+  .btn-danger:hover{ border-color:var(--danger); }
+  .btn-row{ display:flex; gap:8px; }
+  .btn-row .btn{ margin-bottom:0; }
+
+  .empty-hint{ color:var(--muted); font-size:13px; line-height:1.6; padding:6px 2px; }
+
+  .building-list{ display:flex; flex-direction:column; gap:6px; }
+  .building-row{
+    display:flex; align-items:center; gap:9px; padding:8px 9px; border-radius:8px;
+    border:1px solid transparent; cursor:pointer; font-size:13px;
+  }
+  .building-row:hover{ background:var(--panel-2); }
+  .building-row.active{ background:var(--panel-2); border-color:var(--accent); }
+  .swatch{ width:12px; height:12px; border-radius:3px; flex-shrink:0; border:1px solid rgba(255,255,255,.25); }
+  .building-row .name{ flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .building-row .h{ color:var(--muted); font-size:11.5px; }
+
+  /* ---- code modal ---- */
+  .modal-backdrop{
+    position:fixed; inset:0; background:rgba(0,0,0,.55); z-index:50;
+    display:flex; align-items:center; justify-content:center;
+  }
+  .modal{
+    width:min(640px, 90vw); max-height:80vh; background:var(--panel); border:1px solid var(--line);
+    border-radius:14px; display:flex; flex-direction:column; overflow:hidden;
+    box-shadow:0 24px 70px rgba(0,0,0,.55);
+  }
+  .modal-head{ display:flex; align-items:center; justify-content:space-between; padding:14px 18px; border-bottom:1px solid var(--line); }
+  .modal-head h3{ margin:0; font-size:14px; }
+  .modal-head button{ background:none; border:none; color:var(--muted); font-size:20px; cursor:pointer; line-height:1; }
+  .modal pre{
+    margin:0; padding:18px; overflow:auto; font-family:"SF Mono", Menlo, Consolas, monospace;
+    font-size:12.3px; line-height:1.6; color:#c9e6c4; background:#0f1017; flex:1;
+  }
+  .modal-foot{ padding:12px 18px; border-top:1px solid var(--line); display:flex; justify-content:flex-end; gap:8px; }
+  .modal-foot .btn{ width:auto; margin-bottom:0; padding:8px 16px; }
+
+  ::-webkit-scrollbar{ width:9px; }
+  ::-webkit-scrollbar-thumb{ background:var(--line); border-radius:5px; }
+</style>
+</head>
+<body>
+
+<div id="app">
+  <div id="map">
+    <div class="token-gate" id="tokenGate">
+      <div class="token-card">
+        <h2>Connect your Mapbox token</h2>
+        <p>Paste your <code>mapboxAccessToken</code> (same one from your app's <code>config.json</code>) to load the map. Nothing is sent anywhere — it's only used in your browser for this session.</p>
+        <label>Mapbox access token</label>
+        <input type="text" id="tokenInput" placeholder="pk.eyJ1Ijoi..." />
+        <label>Style URL (optional — defaults to a plain light style)</label>
+        <input type="text" id="styleInput" placeholder="mapbox://styles/mapbox/light-v11" />
+        <button class="btn btn-primary" id="loadMapBtn">Load map</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="sidebar">
+    <div class="side-section">
+      <h3>Building designer</h3>
+      <button class="btn btn-primary" id="newBuildingBtn">+ Create new building</button>
+      <div class="empty-hint">Click the button, then tap 4 corners on the map to draw a footprint.</div>
+    </div>
+
+    <div class="side-section" id="listSection">
+      <h3>Buildings on this map</h3>
+      <div class="building-list" id="buildingList">
+        <div class="empty-hint" id="listEmptyHint">None yet — create one above.</div>
+      </div>
+    </div>
+
+    <div class="side-section" id="editorSection" style="display:none;">
+      <h3>Selected building</h3>
+
+      <label>Name</label>
+      <input type="text" id="nameInput" />
+
+      <label>Height (meters)</label>
+      <div class="range-row">
+        <input type="range" id="heightRange" min="1" max="60" step="0.5" />
+        <div class="val" id="heightVal"></div>
+      </div>
+
+      <label>Base (meters above ground)</label>
+      <div class="range-row">
+        <input type="range" id="baseRange" min="0" max="30" step="0.5" />
+        <div class="val" id="baseVal"></div>
+      </div>
+
+      <label>Opacity</label>
+      <div class="range-row">
+        <input type="range" id="opacityRange" min="0" max="1" step="0.05" />
+        <div class="val" id="opacityVal"></div>
+      </div>
+
+      <label>Color</label>
+      <input type="color" id="colorInput" />
+
+      <label style="display:flex; align-items:center; gap:8px; cursor:pointer; margin-bottom:14px;">
+        <input type="checkbox" id="roundedInput" style="width:auto; margin:0;" />
+        <span style="color:var(--text); font-size:13px;">Rounded corners (match native buildings)</span>
+      </label>
+
+      <div class="btn-row" style="margin-bottom:8px;">
+        <button class="btn" id="previewBtn">Preview</button>
+        <button class="btn" id="deleteBtn" style="width:auto; padding:10px 14px;">🗑</button>
+      </div>
+      <button class="btn btn-primary" id="getCodeBtn">Get code for this building</button>
+    </div>
+
+    <div class="side-section" id="cornersSection" style="display:none;">
+      <h3>Corners</h3>
+      <div class="empty-hint" style="margin-bottom:10px;">
+        Drag any orange handle on the map to reshape this building. Edges show
+        <span style="color:var(--good); font-weight:600;">ALIGNED</span> once both ends share the
+        same longitude or latitude — i.e. that side is a straight line.
+      </div>
+      <div id="cornerEdges" style="font-family:'SF Mono',Menlo,Consolas,monospace; font-size:11.5px; line-height:1.9;"></div>
+    </div>
+
+    <div class="side-section" id="allCodeSection" style="display:none;">
+      <button class="btn" id="getAllCodeBtn">Get code for all buildings</button>
+    </div>
+
+    <div class="side-section" id="removeSection">
+      <h3>Remove existing buildings</h3>
+
+      <label style="display:flex; align-items:center; gap:8px; cursor:pointer; margin-bottom:12px;">
+        <input type="checkbox" id="standardModeToggle" style="width:auto; margin:0;" />
+        <span style="color:var(--text); font-size:13px;">Style uses Mapbox Standard's building featureset</span>
+      </label>
+
+      <div id="classicLayerPicker">
+        <label>Building layer in this style</label>
+        <div class="btn-row" style="margin-bottom:12px;">
+          <select id="buildingLayerSelect" style="margin-bottom:0;"></select>
+          <button class="btn" id="refreshLayersBtn" title="Re-scan the map for building layers" style="width:auto; flex-shrink:0; padding:7px 10px;">↻</button>
+        </div>
+      </div>
+      <div class="empty-hint" id="standardModeNote" style="display:none; margin-bottom:10px;">
+        This style's buildings aren't a filterable layer, so removed ones are erased with a small "clip" shape traced around each footprint instead.
+      </div>
+
+      <button class="btn btn-danger" id="removeModeBtn">🗑 Click a building to remove</button>
+      <div class="empty-hint" id="removeHint">If buildings don't disappear when clicked, try another layer from the dropdown above, or hit ↻ if you just panned somewhere new.</div>
+      <div class="building-list" id="removedList" style="margin-top:10px;"></div>
+      <button class="btn btn-primary" id="getRemovedCodeBtn" style="display:none; margin-top:4px;">Get code to keep buildings removed</button>
+    </div>
+  </div>
+</div>
+
+<div id="modalRoot"></div>
+
+<script>
+/* ---------------------------------------------------------------
+   Location: same camp coordinates used in MapWidget.tsx
+--------------------------------------------------------------- */
+const DEFAULT_CENTER = [23.052373830426035, 37.8020771031114];
+const DEFAULT_STYLE = "mapbox://styles/mapbox/light-v11";
+
+let map = null;
+let buildings = [];       // {id, name, points:[[lng,lat] x4], height, base, opacity, color}
+let selectedId = null;
+let placing = false;
+let placingPoints = [];
+
+/* ---------------------------------------------------------------
+   Removing native map buildings (the ones baked into the style itself,
+   not the custom ones drawn above). Two mechanisms exist:
+   - Classic styles: buildings are a filterable fill-extrusion layer —
+     find it, remember its base filter, exclude clicked buildings by id.
+   - Mapbox Standard styles: buildings are only exposed through a
+     "buildings" featureset with no filterable layer at all, so instead
+     we trace each clicked building's footprint and erase it with a
+     "clip" style layer (GL JS v3+, an experimental feature).
+--------------------------------------------------------------- */
+let nativeBuildingLayerId = null;
+let nativeBuildingBaseFilter = null;
+let removingBuildings = false;
+let removedBuildingIds = new Set();
+
+let usingStandardBuildings = false;
+let standardClickInteractionAdded = false;
+let removedStandardBuildings = new Map(); // key: JSON.stringify(feature.id) -> {id, geometry}
+const STANDARD_CLIP_SOURCE_ID = "app-removed-buildings-source";
+const STANDARD_CLIP_LAYER_ID = "app-removed-buildings-clip";
+
+/* ---------------------------------------------------------------
+   Token gate
+--------------------------------------------------------------- */
+document.getElementById("loadMapBtn").addEventListener("click", () => {
+  const token = document.getElementById("tokenInput").value.trim();
+  const style = document.getElementById("styleInput").value.trim() || DEFAULT_STYLE;
+  if (!token) { alert("Paste a Mapbox access token first."); return; }
+  initMap(token, style);
+});
+
+function initMap(token, style) {
+  mapboxgl.accessToken = token;
+  map = new mapboxgl.Map({
+    container: "map",
+    style,
+    center: DEFAULT_CENTER,
+    zoom: 17.5,
+    pitch: 50,
+    bearing: 0,
+    antialias: true,
+  });
+  map.addControl(new mapboxgl.NavigationControl({ visualizePitch: true }), "top-left");
+
+  map.on("load", () => {
+    // Minimal look: hide labels/POI icons so the canvas stays clean for footprint work.
+    const layers = map.getStyle().layers || [];
+    layers.forEach((l) => {
+      if (l.type === "symbol") {
+        map.setLayoutProperty(l.id, "visibility", "none");
+      }
+    });
+
+    // Two totally different mechanisms exist for removing buildings:
+    // classic styles expose buildings as a filterable fill-extrusion layer,
+    // while styles built on Mapbox Standard expose them only through a
+    // "buildings" featureset (no filterable layer at all — see
+    // applyRemovalMode / ensureStandardBuildingInteraction below). Guess
+    // which one this style uses, but let the toggle override the guess.
+    const imports = map.getStyle().imports || [];
+    const detectedStandard = imports.some((imp) => imp.id === "basemap");
+    document.getElementById("standardModeToggle").checked = detectedStandard;
+    applyRemovalMode(detectedStandard);
+
+    if (!detectedStandard) {
+      // Every style names/structures its building layer differently — and
+      // styles built on Mapbox Standard don't always list their imported
+      // basemap layers in getStyle().layers right when "load" fires. So
+      // besides the static style layers, also ask what's ACTUALLY drawn on
+      // screen right now via queryRenderedFeatures, which reflects reality
+      // regardless of how the style assembled itself.
+      refreshBuildingLayerOptions();
+      map.once("idle", refreshBuildingLayerOptions); // extrusions may render a frame later
+    }
+
+    // Sources used while placing a new footprint.
+    map.addSource("draft-points", { type: "geojson", data: emptyFC() });
+    map.addSource("draft-outline", { type: "geojson", data: emptyFC() });
+
+    map.addLayer({
+      id: "draft-outline-line",
+      type: "line",
+      source: "draft-outline",
+      paint: { "line-color": "#f0a34e", "line-width": 2, "line-dasharray": [2, 1.5] },
+    });
+    map.addLayer({
+      id: "draft-points-circle",
+      type: "circle",
+      source: "draft-points",
+      paint: {
+        "circle-radius": 5,
+        "circle-color": "#f0a34e",
+        "circle-stroke-width": 2,
+        "circle-stroke-color": "#1c1305",
+      },
+    });
+
+    map.on("click", onMapClick);
+    document.getElementById("tokenGate").style.display = "none";
+  });
+}
+
+function emptyFC() { return { type: "FeatureCollection", features: [] }; }
+
+/* ---------------------------------------------------------------
+   Placement flow: click "Create new building", then 4 map clicks
+--------------------------------------------------------------- */
+document.getElementById("newBuildingBtn").addEventListener("click", startPlacing);
+
+function startPlacing() {
+  if (removingBuildings) { removingBuildings = false; updateRemoveModeUI(); }
+  placing = true;
+  placingPoints = [];
+  selectBuilding(null);
+  updateDraftLayers();
+  showBanner();
+}
+
+function onMapClick(e) {
+  if (removingBuildings) {
+    if (!usingStandardBuildings) handleRemoveBuildingClick(e);
+    return; // Standard mode is handled by the buildings featureset interaction below
+  }
+  if (!placing) return;
+  placingPoints.push([e.lngLat.lng, e.lngLat.lat]);
+  updateDraftLayers();
+  updateBanner();
+  if (placingPoints.length === 4) {
+    finishPlacing();
+  }
+}
+
+const CORNER_LABELS = ["top-left", "top-right", "bottom-right", "bottom-left"];
+
+function showBanner() {
+  let el = document.getElementById("placeBanner");
+  if (!el) {
+    el = document.createElement("div");
+    el.id = "placeBanner";
+    el.className = "banner";
+    document.getElementById("map").appendChild(el);
+  }
+  updateBanner();
+}
+
+function updateBanner() {
+  const el = document.getElementById("placeBanner");
+  if (!el) return;
+  const step = placingPoints.length;
+  if (step >= 4) { el.remove(); return; }
+  el.innerHTML =
+    `Click corner ${step + 1} of 4 — <strong>${CORNER_LABELS[step]}</strong>` +
+    `<button id="cancelPlaceBtn">Cancel</button>`;
+  document.getElementById("cancelPlaceBtn").onclick = cancelPlacing;
+}
+
+function cancelPlacing() {
+  placing = false;
+  placingPoints = [];
+  updateDraftLayers();
+  const el = document.getElementById("placeBanner");
+  if (el) el.remove();
+}
+
+function updateDraftLayers() {
+  if (!map) return;
+  const pointsFC = {
+    type: "FeatureCollection",
+    features: placingPoints.map((p) => ({ type: "Feature", geometry: { type: "Point", coordinates: p }, properties: {} })),
+  };
+  const ring = placingPoints.length > 1 ? [...placingPoints, placingPoints[0]] : placingPoints;
+  const lineFC = {
+    type: "FeatureCollection",
+    features: ring.length > 1 ? [{ type: "Feature", geometry: { type: "LineString", coordinates: ring }, properties: {} }] : [],
+  };
+  map.getSource("draft-points").setData(pointsFC);
+  map.getSource("draft-outline").setData(lineFC);
+}
+
+function finishPlacing() {
+  placing = false;
+  const id = "b" + Date.now().toString(36);
+  const building = {
+    id,
+    name: "Building " + (buildings.length + 1),
+    points: [...placingPoints],
+    height: 5,
+    base: 0,
+    opacity: 0.95,
+    color: "#e8e0d5",
+    rounded: false,
+    edgeRadius: 0.35, // meters; only applied while `rounded` is checked
+  };
+  buildings.push(building);
+  placingPoints = [];
+  updateDraftLayers();
+  const el = document.getElementById("placeBanner");
+  if (el) el.remove();
+
+  addBuildingLayer(building);
+  renderBuildingList();
+  selectBuilding(id);
+}
+
+/* ---------------------------------------------------------------
+   Removing native map buildings
+--------------------------------------------------------------- */
+document.getElementById("standardModeToggle").addEventListener("change", (e) => {
+  applyRemovalMode(e.target.checked);
+});
+
+function applyRemovalMode(standard) {
+  usingStandardBuildings = standard;
+  document.getElementById("classicLayerPicker").style.display = standard ? "none" : "block";
+  document.getElementById("standardModeNote").style.display = standard ? "block" : "none";
+  removingBuildings = false;
+  renderRemovedList();
+  updateRemoveModeUI();
+  if (standard) ensureStandardBuildingInteraction();
+}
+
+/* ---- Classic styles: filterable fill-extrusion / fill layer ---- */
+function refreshBuildingLayerOptions() {
+  // queryRenderedFeatures with no geometry argument checks the whole
+  // current viewport, so this reflects layers that are truly painting
+  // pixels right now — more reliable than getStyle().layers alone.
+  const seen = new Map();
+  (map.queryRenderedFeatures() || []).forEach((f) => {
+    if (f.layer && (f.layer.type === "fill-extrusion" || f.layer.type === "fill")) {
+      seen.set(f.layer.id, f.layer);
+    }
+  });
+  (map.getStyle().layers || []).forEach((l) => {
+    if ((l.type === "fill-extrusion" || l.type === "fill") && !seen.has(l.id)) {
+      seen.set(l.id, l);
+    }
+  });
+  populateBuildingLayerSelect([...seen.values()]);
+}
+
+document.getElementById("refreshLayersBtn").addEventListener("click", refreshBuildingLayerOptions);
+
+function populateBuildingLayerSelect(candidates) {
+  const select = document.getElementById("buildingLayerSelect");
+  const previousChoice = nativeBuildingLayerId;
+  select.innerHTML = "";
+
+  if (!candidates.length) {
+    const opt = document.createElement("option");
+    opt.textContent = "No fill layers found — try ↻ after panning to buildings";
+    select.appendChild(opt);
+    setBuildingLayer(null);
+    return;
+  }
+
+  candidates.forEach((l) => {
+    const opt = document.createElement("option");
+    opt.value = l.id;
+    opt.textContent = l.id + "  (" + l.type + (l["source-layer"] ? ", " + l["source-layer"] : "") + ")";
+    select.appendChild(opt);
+  });
+
+  if (previousChoice && candidates.some((l) => l.id === previousChoice)) {
+    select.value = previousChoice;
+    return;
+  }
+
+  const guess =
+    candidates.find((l) => l.type === "fill-extrusion" && /building/i.test(l["source-layer"] || "")) ||
+    candidates.find((l) => l.type === "fill-extrusion" && /building/i.test(l.id || "")) ||
+    candidates.find((l) => /building/i.test(l.id || "") || /building/i.test(l["source-layer"] || "")) ||
+    candidates.find((l) => l.type === "fill-extrusion") ||
+    candidates[0];
+
+  select.value = guess.id;
+  setBuildingLayer(guess.id);
+
+  select.onchange = () => setBuildingLayer(select.value);
+}
+
+function setBuildingLayer(layerId) {
+  nativeBuildingLayerId = layerId || null;
+  nativeBuildingBaseFilter = layerId ? map.getFilter(layerId) || null : null;
+  removedBuildingIds.clear();
+  renderRemovedList();
+  removingBuildings = false;
+  updateRemoveModeUI();
+}
+
+function handleRemoveBuildingClick(e) {
+  const features = map.queryRenderedFeatures(e.point, { layers: [nativeBuildingLayerId] });
+  if (!features.length) return; // clicked empty ground, not a building
+  const f = features[0];
+  if (f.id === undefined || f.id === null) {
+    alert("This building has no stable id in the source tiles, so it can't be removed individually.");
+    return;
+  }
+  removedBuildingIds.add(f.id);
+  applyRemovedBuildingsFilter();
+  renderRemovedList();
+}
+
+function applyRemovedBuildingsFilter() {
+  if (!nativeBuildingLayerId) return;
+  const ids = [...removedBuildingIds];
+  if (!ids.length) {
+    map.setFilter(nativeBuildingLayerId, nativeBuildingBaseFilter || null);
+    return;
+  }
+  const hideExpr = ["!", ["in", ["id"], ["literal", ids]]];
+  const finalFilter = nativeBuildingBaseFilter ? ["all", nativeBuildingBaseFilter, hideExpr] : hideExpr;
+  map.setFilter(nativeBuildingLayerId, finalFilter);
+}
+
+function codeForRemovedClassicBuildings() {
+  const ids = [...removedBuildingIds];
+  const layer = nativeBuildingLayerId;
+  const baseFilterStr = nativeBuildingBaseFilter ? JSON.stringify(nativeBuildingBaseFilter) : "null";
+  return `// Native building layer detected in this style: "${layer}"
+// Feature ids below come from the style's vector tiles. They're stable
+// for this tileset/style, but if the style or its source tileset ever
+// changes, re-pick the buildings here to get fresh ids.
+const removedBuildingIds = ${JSON.stringify(ids)};
+
+const baseFilter = ${baseFilterStr}; // this layer's original filter, before hiding anything
+const hideFilter = ["!", ["in", ["id"], ["literal", removedBuildingIds]]];
+const finalFilter = baseFilter ? ["all", baseFilter, hideFilter] : hideFilter;
+
+// Re-apply on every style load (covers style switches / first load):
+map.on("style.load", () => {
+  map.setFilter("${layer}", finalFilter);
+});
+
+// If the style is already loaded (e.g. inside a useEffect after the map
+// is ready), you can also just call this once directly:
+// map.setFilter("${layer}", finalFilter);`;
+}
+
+/* ---- Mapbox Standard styles: buildings featureset + clip layer ---- */
+function ensureStandardBuildingInteraction() {
+  if (standardClickInteractionAdded) return;
+  try {
+    map.addInteraction("app-remove-building-click", {
+      type: "click",
+      target: { featuresetId: "buildings", importId: "basemap" },
+      handler: ({ feature }) => {
+        if (!removingBuildings) return;
+        removeStandardBuilding(feature);
+      },
+    });
+    standardClickInteractionAdded = true;
+  } catch (err) {
+    console.warn("Couldn't add an interaction for the buildings featureset:", err);
+  }
+}
+
+function removeStandardBuilding(feature) {
+  if (!feature || !feature.geometry) return;
+  const key = JSON.stringify(feature.id);
+  if (removedStandardBuildings.has(key)) return;
+  // Buffer the traced footprint outward a little so the clip fully covers
+  // facade details/overhangs right at the building's edge.
+  const geometry = bufferGeometry(feature.geometry, 1.5);
+  removedStandardBuildings.set(key, { id: feature.id, geometry });
+  applyStandardBuildingsClip();
+  renderRemovedList();
+}
+
+function applyStandardBuildingsClip() {
+  const fc = {
+    type: "FeatureCollection",
+    features: [...removedStandardBuildings.values()].map((b) => ({
+      type: "Feature",
+      properties: {},
+      geometry: b.geometry,
+    })),
+  };
+  if (map.getSource(STANDARD_CLIP_SOURCE_ID)) {
+    map.getSource(STANDARD_CLIP_SOURCE_ID).setData(fc);
+  } else {
+    map.addSource(STANDARD_CLIP_SOURCE_ID, { type: "geojson", data: fc });
+    map.addLayer({
+      id: STANDARD_CLIP_LAYER_ID,
+      type: "clip",
+      source: STANDARD_CLIP_SOURCE_ID,
+      layout: {
+        // Also clips 3D landmark models, in case a removed building
+        // renders as a model rather than a procedural extrusion.
+        "clip-layer-types": ["model"],
+      },
+    });
+  }
+}
+
+// Rough outward buffer: scales each ring's points away from its own
+// bounding-box center by a fixed number of meters. Not a true geometric
+// buffer (concave corners aren't perfectly offset), but plenty accurate
+// for slightly over-covering a building footprint for clipping purposes.
+function bufferGeometry(geometry, meters) {
+  if (geometry.type === "Polygon") {
+    return { type: "Polygon", coordinates: geometry.coordinates.map((ring) => bufferRing(ring, meters)) };
+  }
+  if (geometry.type === "MultiPolygon") {
+    return {
+      type: "MultiPolygon",
+      coordinates: geometry.coordinates.map((poly) => poly.map((ring) => bufferRing(ring, meters))),
+    };
+  }
+  return geometry;
+}
+
+function bufferRing(ring, meters) {
+  const lats = ring.map((p) => p[1]);
+  const lngs = ring.map((p) => p[0]);
+  const centerLat = (Math.min(...lats) + Math.max(...lats)) / 2;
+  const centerLng = (Math.min(...lngs) + Math.max(...lngs)) / 2;
+  const mPerDegLat = 111320;
+  const mPerDegLng = 111320 * Math.cos((centerLat * Math.PI) / 180);
+  return ring.map(([lng, lat]) => {
+    const dx = (lng - centerLng) * mPerDegLng;
+    const dy = (lat - centerLat) * mPerDegLat;
+    const dist = Math.sqrt(dx * dx + dy * dy) || 1;
+    const scale = (dist + meters) / dist;
+    return [centerLng + (dx * scale) / mPerDegLng, centerLat + (dy * scale) / mPerDegLat];
+  });
+}
+
+function codeForRemovedStandardBuildings() {
+  const fc = {
+    type: "FeatureCollection",
+    features: [...removedStandardBuildings.values()].map((b) => ({
+      type: "Feature",
+      properties: {},
+      geometry: b.geometry,
+    })),
+  };
+  return `// This style uses Mapbox Standard, whose buildings aren't a
+// filterable layer — they're erased with a "clip" style layer instead
+// (GL JS v3+, currently an experimental feature). The polygons below
+// were traced from the buildings you clicked, with a small outward
+// buffer so the clip fully covers each footprint.
+//
+// IMPORTANT: do NOT add a "slot" to the clip layer below unless you've
+// confirmed exactly which slot this style's buildings/landmarks render
+// in. A clip layer only clips content in its own slot — get the slot
+// wrong (or guess one, e.g. "middle") and the layer adds with no error
+// and no console warning, it just silently clips nothing.
+const removedBuildingsGeoJSON = ${JSON.stringify(fc, null, 2)};
+
+function applyRemovedBuildingsClip(map) {
+  if (map.getSource("removed-buildings")) {
+    map.getSource("removed-buildings").setData(removedBuildingsGeoJSON);
+  } else {
+    map.addSource("removed-buildings", {
+      type: "geojson",
+      data: removedBuildingsGeoJSON,
+    });
+  }
+  if (!map.getLayer("removed-buildings-clip")) {
+    map.addLayer({
+      id: "removed-buildings-clip",
+      type: "clip",
+      source: "removed-buildings",
+      layout: {
+        // Also clips 3D landmark models, in case a removed building
+        // renders as a model rather than a procedural extrusion.
+        "clip-layer-types": ["model"],
+      },
+    });
+  }
+}
+
+// Re-apply on every style load (covers style switches / first load):
+map.on("style.load", () => applyRemovedBuildingsClip(map));
+
+// If the style is already loaded (e.g. inside a useEffect after the map
+// is ready), you can also just call this once directly:
+// applyRemovedBuildingsClip(map);`;
+}
+
+/* ---- Shared UI: toggle button, list, code export ---- */
+document.getElementById("removeModeBtn").addEventListener("click", () => {
+  if (!usingStandardBuildings && !nativeBuildingLayerId) return;
+  cancelPlacing();
+  removingBuildings = !removingBuildings;
+  updateRemoveModeUI();
+});
+
+function updateRemoveModeUI() {
+  const btn = document.getElementById("removeModeBtn");
+  if (!usingStandardBuildings && !nativeBuildingLayerId) {
+    btn.disabled = true;
+    btn.textContent = "No fill layers in this style";
+    document.getElementById("map").style.cursor = "";
+    return;
+  }
+  btn.disabled = false;
+  if (removingBuildings) {
+    btn.textContent = "🗑 Click a building on the map… (click to cancel)";
+    document.getElementById("map").style.cursor = "crosshair";
+  } else {
+    btn.textContent = "🗑 Click a building to remove";
+    document.getElementById("map").style.cursor = "";
+  }
+}
+
+function makeRestoreBtn(onClick) {
+  const btn = document.createElement("button");
+  btn.className = "btn";
+  btn.textContent = "Restore";
+  btn.style.cssText = "width:auto; padding:4px 10px; margin:0; font-size:11.5px; flex-shrink:0;";
+  btn.onclick = (ev) => {
+    ev.stopPropagation();
+    onClick();
+  };
+  return btn;
+}
+
+function renderRemovedList() {
+  const list = document.getElementById("removedList");
+  const codeBtn = document.getElementById("getRemovedCodeBtn");
+  list.innerHTML = "";
+
+  if (usingStandardBuildings) {
+    const entries = [...removedStandardBuildings.values()];
+    codeBtn.style.display = entries.length ? "block" : "none";
+    entries.forEach((b) => {
+      const key = JSON.stringify(b.id);
+      const row = document.createElement("div");
+      row.className = "building-row";
+      row.style.cursor = "default";
+      const nameEl = document.createElement("div");
+      nameEl.className = "name";
+      nameEl.textContent = "Building #" + key;
+      row.appendChild(nameEl);
+      row.appendChild(
+        makeRestoreBtn(() => {
+          removedStandardBuildings.delete(key);
+          applyStandardBuildingsClip();
+          renderRemovedList();
+        })
+      );
+      list.appendChild(row);
+    });
+    return;
+  }
+
+  const ids = [...removedBuildingIds];
+  codeBtn.style.display = ids.length ? "block" : "none";
+  ids.forEach((id) => {
+    const row = document.createElement("div");
+    row.className = "building-row";
+    row.style.cursor = "default";
+    const nameEl = document.createElement("div");
+    nameEl.className = "name";
+    nameEl.textContent = "Building #" + id;
+    row.appendChild(nameEl);
+    row.appendChild(
+      makeRestoreBtn(() => {
+        removedBuildingIds.delete(id);
+        applyRemovedBuildingsFilter();
+        renderRemovedList();
+      })
+    );
+    list.appendChild(row);
+  });
+}
+
+document.getElementById("getRemovedCodeBtn").addEventListener("click", () => {
+  const code = usingStandardBuildings ? codeForRemovedStandardBuildings() : codeForRemovedClassicBuildings();
+  openCodeModal("Removed buildings — code", code);
+});
+
+/* ---------------------------------------------------------------
+   Rendering a building's fill-extrusion on the map
+--------------------------------------------------------------- */
+function toFeature(b) {
+  const ring = [...b.points, b.points[0]];
+  return { type: "Feature", geometry: { type: "Polygon", coordinates: [ring] }, properties: {} };
+}
+
+function addBuildingLayer(b) {
+  map.addSource(srcId(b.id), { type: "geojson", data: toFeature(b) });
+  map.addLayer({
+    id: layerId(b.id),
+    type: "fill-extrusion",
+    source: srcId(b.id),
+    // fill-extrusion-edge-radius and fill-extrusion-rounded-roof are LAYOUT
+    // properties (they change the tessellated geometry, not just shading),
+    // unlike color/height/base/opacity which are paint properties.
+    layout: {
+      "fill-extrusion-rounded-roof": true,
+      "fill-extrusion-edge-radius": b.rounded ? b.edgeRadius : 0,
+    },
+    paint: {
+      "fill-extrusion-color": b.color,
+      "fill-extrusion-height": b.height,
+      "fill-extrusion-base": b.base,
+      "fill-extrusion-opacity": b.opacity,
+    },
+  });
+}
+
+function updateBuildingLayer(b) {
+  map.setPaintProperty(layerId(b.id), "fill-extrusion-color", b.color);
+  map.setPaintProperty(layerId(b.id), "fill-extrusion-height", b.height);
+  map.setPaintProperty(layerId(b.id), "fill-extrusion-base", b.base);
+  map.setPaintProperty(layerId(b.id), "fill-extrusion-opacity", b.opacity);
+  map.setLayoutProperty(layerId(b.id), "fill-extrusion-edge-radius", b.rounded ? b.edgeRadius : 0);
+}
+
+function removeBuildingLayer(b) {
+  if (map.getLayer(layerId(b.id))) map.removeLayer(layerId(b.id));
+  if (map.getSource(srcId(b.id))) map.removeSource(srcId(b.id));
+}
+
+function srcId(id) { return "building-" + id + "-source"; }
+function layerId(id) { return "building-" + id + "-layer"; }
+
+/* ---------------------------------------------------------------
+   Sidebar: list + editor
+--------------------------------------------------------------- */
+function renderBuildingList() {
+  const list = document.getElementById("buildingList");
+  const emptyHint = document.getElementById("listEmptyHint");
+  list.innerHTML = "";
+  document.getElementById("allCodeSection").style.display = buildings.length ? "block" : "none";
+
+  if (!buildings.length) {
+    list.appendChild(emptyHint);
+    return;
+  }
+  buildings.forEach((b) => {
+    const row = document.createElement("div");
+    row.className = "building-row" + (b.id === selectedId ? " active" : "");
+    row.innerHTML =
+      `<div class="swatch" style="background:${b.color}"></div>` +
+      `<div class="name">${escapeHtml(b.name)}</div>` +
+      `<div class="h">${b.height}m</div>`;
+    row.onclick = () => selectBuilding(b.id);
+    list.appendChild(row);
+  });
+}
+
+function selectBuilding(id) {
+  selectedId = id;
+  renderBuildingList();
+  const editor = document.getElementById("editorSection");
+  if (!id) {
+    editor.style.display = "none";
+    document.getElementById("cornersSection").style.display = "none";
+    clearCornerMarkers();
+    return;
+  }
+  editor.style.display = "block";
+  const b = buildings.find((x) => x.id === id);
+  document.getElementById("nameInput").value = b.name;
+  document.getElementById("heightRange").value = b.height;
+  document.getElementById("heightVal").textContent = b.height + "m";
+  document.getElementById("baseRange").value = b.base;
+  document.getElementById("baseVal").textContent = b.base + "m";
+  document.getElementById("opacityRange").value = b.opacity;
+  document.getElementById("opacityVal").textContent = b.opacity.toFixed(2);
+  document.getElementById("colorInput").value = b.color;
+  document.getElementById("roundedInput").checked = b.rounded;
+
+  document.getElementById("cornersSection").style.display = "block";
+  renderCorners(b);
+  createCornerMarkers(b);
+}
+
+function currentBuilding() { return buildings.find((b) => b.id === selectedId); }
+
+/* ---------------------------------------------------------------
+   Corners — draggable handles on the map (grab and move a corner
+   directly) plus a live readout of which edges are a straight line.
+--------------------------------------------------------------- */
+function cornerLabel(i) { return `P${i + 1} (${CORNER_LABELS[i]})`; }
+
+const EDGES = [
+  { a: 0, b: 1, axis: 1, name: "Top (P1–P2)" },    // top edge: same latitude
+  { a: 1, b: 2, axis: 0, name: "Right (P2–P3)" },  // right edge: same longitude
+  { a: 2, b: 3, axis: 1, name: "Bottom (P3–P4)" }, // bottom edge: same latitude
+  { a: 3, b: 0, axis: 0, name: "Left (P4–P1)" },   // left edge: same longitude
+];
+const ALIGN_TOLERANCE_M = 0.15; // how close counts as "aligned"
+
+function metersBetween(p1, p2, axis) {
+  const lat = (p1[1] + p2[1]) / 2;
+  if (axis === 1) return Math.abs(p1[1] - p2[1]) * 111320;
+  return Math.abs(p1[0] - p2[0]) * 111320 * Math.cos((lat * Math.PI) / 180);
+}
+
+function renderCorners(b) {
+  const el = document.getElementById("cornerEdges");
+  el.innerHTML = EDGES.map((edge) => {
+    const p1 = b.points[edge.a];
+    const p2 = b.points[edge.b];
+    const offMeters = metersBetween(p1, p2, edge.axis);
+    const aligned = offMeters <= ALIGN_TOLERANCE_M;
+    const status = aligned
+      ? `<span style="color:var(--good); font-weight:600;">ALIGNED</span>`
+      : `<span style="color:var(--muted);">${offMeters.toFixed(2)}m off</span>`;
+    return `${edge.name}: ${status}`;
+  }).join("<br/>");
+}
+
+/* Draggable handles: only the SELECTED building's corners are shown on the
+   map at a time, so the canvas doesn't fill up with handles for every
+   building you've placed. */
+let cornerMarkers = [];
+
+function clearCornerMarkers() {
+  cornerMarkers.forEach((m) => m.remove());
+  cornerMarkers = [];
+}
+
+function createCornerMarkers(b) {
+  clearCornerMarkers();
+  b.points.forEach((point, i) => {
+    const el = document.createElement("div");
+    el.style.cssText =
+      "width:16px; height:16px; border-radius:4px; background:#f0a34e; " +
+      "border:2px solid #1c1305; box-shadow:0 2px 6px rgba(0,0,0,.4); cursor:grab;";
+    const marker = new mapboxgl.Marker({ element: el, draggable: true })
+      .setLngLat(point)
+      .addTo(map);
+
+    marker.on("drag", () => {
+      const { lng, lat } = marker.getLngLat();
+      b.points[i] = [lng, lat];
+      map.getSource(srcId(b.id)).setData(toFeature(b));
+      renderCorners(b);
+    });
+
+    cornerMarkers.push(marker);
+  });
+}
+
+function bindLiveField(elId, valId, prop, formatter) {
+  const el = document.getElementById(elId);
+  el.addEventListener("input", () => {
+    const b = currentBuilding();
+    if (!b) return;
+    const raw = el.type === "range" || el.type === "number" ? parseFloat(el.value) : el.value;
+    b[prop] = raw;
+    if (valId) document.getElementById(valId).textContent = formatter ? formatter(raw) : raw;
+    updateBuildingLayer(b);
+    if (prop === "color") renderBuildingList();
+  });
+}
+
+bindLiveField("heightRange", "heightVal", "height", (v) => v + "m");
+bindLiveField("baseRange", "baseVal", "base", (v) => v + "m");
+bindLiveField("opacityRange", "opacityVal", "opacity", (v) => v.toFixed(2));
+bindLiveField("colorInput", null, "color");
+
+document.getElementById("roundedInput").addEventListener("change", (e) => {
+  const b = currentBuilding();
+  if (!b) return;
+  b.rounded = e.target.checked;
+  updateBuildingLayer(b);
+});
+
+document.getElementById("nameInput").addEventListener("input", (e) => {
+  const b = currentBuilding();
+  if (!b) return;
+  b.name = e.target.value;
+  renderBuildingList();
+});
+
+document.getElementById("deleteBtn").addEventListener("click", () => {
+  const b = currentBuilding();
+  if (!b) return;
+  removeBuildingLayer(b);
+  buildings = buildings.filter((x) => x.id !== b.id);
+  selectBuilding(null);
+  renderBuildingList();
+});
+
+/* Preview: fly the camera in close over the selected building so it's easy to inspect. */
+document.getElementById("previewBtn").addEventListener("click", () => {
+  const b = currentBuilding();
+  if (!b) return;
+  const lngs = b.points.map((p) => p[0]);
+  const lats = b.points.map((p) => p[1]);
+  const center = [
+    (Math.min(...lngs) + Math.max(...lngs)) / 2,
+    (Math.min(...lats) + Math.max(...lats)) / 2,
+  ];
+  map.flyTo({ center, zoom: 19.5, pitch: 60, bearing: map.getBearing() + 25, duration: 1200 });
+});
+
+/* ---------------------------------------------------------------
+   Code export
+--------------------------------------------------------------- */
+function ringCoordString(b, indent) {
+  const ring = [...b.points, b.points[0]];
+  return ring.map((p) => `${indent}[${p[0].toFixed(7)}, ${p[1].toFixed(7)}]`).join(",\n");
+}
+
+function varName(b) {
+  return "building_" + b.name.trim().toLowerCase().replace(/[^a-z0-9]+/g, "_").replace(/^_+|_+$/g, "");
+}
+
+function codeForBuilding(b) {
+  const v = varName(b) || "building";
+  const layoutBlock = b.rounded
+    ? `
+    layout={{
+      "fill-extrusion-rounded-roof": true,
+      "fill-extrusion-edge-radius": ${b.edgeRadius}, // meters; needs mapbox-gl-js v3.9+
+    }}`
+    : "";
+  return `// ${b.name}
+const ${v}: GeoJSON.Feature<GeoJSON.Polygon> = {
+  type: "Feature",
+  geometry: {
+    type: "Polygon",
+    coordinates: [[
+${ringCoordString(b, "      ")}
+    ]],
+  },
+  properties: {},
+};
+
+<Source id="building-${b.id}-source" type="geojson" data={${v}}>
+  <Layer
+    id="building-${b.id}-layer"
+    type="fill-extrusion"${layoutBlock}
+    paint={{
+      "fill-extrusion-color": "${b.color}",
+      "fill-extrusion-height": ${b.height},
+      "fill-extrusion-base": ${b.base},
+      "fill-extrusion-opacity": ${b.opacity},
+    }}
+  />
+</Source>`;
+}
+
+function openCodeModal(title, code) {
+  const root = document.getElementById("modalRoot");
+  root.innerHTML = `
+    <div class="modal-backdrop" id="modalBackdrop">
+      <div class="modal">
+        <div class="modal-head">
+          <h3>${escapeHtml(title)}</h3>
+          <button id="modalClose">&times;</button>
+        </div>
+        <pre id="modalCode">${escapeHtml(code)}</pre>
+        <div class="modal-foot">
+          <button class="btn" id="modalCopy">Copy code</button>
+          <button class="btn btn-primary" id="modalDone">Done</button>
+        </div>
+      </div>
+    </div>`;
+  document.getElementById("modalClose").onclick = closeModal;
+  document.getElementById("modalDone").onclick = closeModal;
+  document.getElementById("modalBackdrop").addEventListener("click", (e) => {
+    if (e.target.id === "modalBackdrop") closeModal();
+  });
+  document.getElementById("modalCopy").onclick = () => {
+    navigator.clipboard.writeText(code);
+    const btn = document.getElementById("modalCopy");
+    btn.textContent = "Copied!";
+    setTimeout(() => (btn.textContent = "Copy code"), 1200);
+  };
+}
+function closeModal() { document.getElementById("modalRoot").innerHTML = ""; }
+
+document.getElementById("getCodeBtn").addEventListener("click", () => {
+  const b = currentBuilding();
+  if (!b) return;
+  openCodeModal(b.name + " — code", codeForBuilding(b));
+});
+
+document.getElementById("getAllCodeBtn").addEventListener("click", () => {
+  const code = buildings.map(codeForBuilding).join("\n\n");
+  openCodeModal("All buildings — code", code);
+});
+
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+}
+</script>
+</body>
+</html><script>
+    const token = "pk.eyJ1IjoicGFwb3N0b2wiLCJhIjoiY21zYXhsZHg5MDU4eDJ5c2YwamVpcGt3aSJ9.WjW-2JGRXAR2Bw6p0iXZIA"
+    const style = "mapbox://styles/papostol/cmsaxm6s400a301s87rqy2af6"
+
+    document.getElementById("tokenInput").value = token
+    document.getElementById("styleInput").value = style
+</script>
