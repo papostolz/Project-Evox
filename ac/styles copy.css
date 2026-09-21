@@ -1,0 +1,914 @@
+:root {
+    --bg-color: #000000;
+    --card-bg: #1c1c1e;
+    --primary-orange: #f27b40;
+    --primary-black: #2c2c2e;
+    --text-grey: #8e8e93;
+    --circle-blue: #7baaf7;
+    --circle-orange: #f29c40;
+    --apple-blue: #0a84ff;
+    --input-bg: #2c2c2e;
+    --text-main: #ffffff;
+    --text-muted: #8e8e93;
+    --border-color: #38383a;
+}
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+}
+
+body {
+    background-color: var(--bg-color);
+    color: var(--text-main);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    margin: 0;
+}
+
+html {
+    margin: 0;
+    background-color: var(--bg-color);
+}
+
+/* Mobile Container */
+.phone-frame {
+    width: 100%;
+    height: 100vh;
+    background-color: var(--bg-color);
+    position: relative;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6);
+    display: flex;
+    flex-direction: column;
+}
+
+/* Status Bar Mockup */
+.status-bar {
+    padding: 15px 25px 5px;
+    display: flex;
+    justify-content: space-between;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-main);
+}
+
+/* Header */
+.header {
+    padding: 10px 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+}
+
+.icon-btn {
+    width: 40px;
+    height: 40px;
+    background: var(--primary-black);
+    color: white;
+    border-radius: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+    font-size: 18px;
+}
+
+.header-title {
+    text-align: center;
+    flex-grow: 1;
+}
+
+.header-title h2 {
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--text-main);
+}
+
+.header-title p {
+    font-size: 12px;
+    color: var(--text-grey);
+    margin-top: 2px;
+}
+
+/* Top Section (Temp & Image) */
+.top-section {
+    display: flex;
+    padding: 20px;
+    position: relative;
+    height: 240px;
+}
+
+/* Temperature Dial */
+.temp-control {
+    width: 45%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    z-index: 2;
+}
+
+.dial-wrapper {
+    width: 130px;
+    height: 130px;
+    position: relative;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.dial-svg {
+    transform: rotate(-90deg);
+    width: 100%;
+    height: 100%;
+}
+
+.dial-circle-bg {
+    fill: none;
+    stroke: var(--border-color);
+    stroke-width: 6;
+}
+
+.dial-circle-blue {
+    fill: none;
+    stroke: var(--circle-blue);
+    stroke-width: 6;
+    stroke-dasharray: 300;
+    stroke-dashoffset: 100;
+    stroke-linecap: round;
+}
+
+.dial-circle-orange {
+    fill: none;
+    stroke: var(--circle-orange);
+    stroke-width: 6;
+    stroke-dasharray: 300;
+    stroke-dashoffset: 220;
+    stroke-linecap: round;
+}
+
+.dial-knob {
+    width: 14px;
+    height: 14px;
+    background: var(--text-main);
+    border-radius: 50%;
+    position: absolute;
+    left: 2px;
+    bottom: 43px;
+    /* Simplified positioning for mockup */
+}
+
+.temp-display {
+    position: absolute;
+    font-size: 28px;
+    font-weight: 600;
+    color: var(--text-main);
+}
+
+.temp-buttons {
+    display: flex;
+    gap: 20px;
+}
+
+.temp-btn.disabled {
+  opacity: 0.35;
+  pointer-events: none;
+  cursor: not-allowed;
+}
+
+.temp-btn {
+    width: 40px;
+    height: 40px;
+    background: var(--primary-black);
+    color: white;
+    border-radius: 50%;
+    border: none;
+    font-size: 20px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+}
+.row-small {
+    display: flex;
+    flex-direction: row-reverse;
+    width: 100%;
+
+}
+.lock-btn {
+    width: auto;
+    height: auto;
+    padding: 5px 15px;
+    background: var(--primary-black);
+    color: white;
+    border-radius: 20px;
+    border: none;
+    font-size: 14px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+}
+
+/* AC Image Placeholder */
+.ac-image-container {
+    width: 55%;
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.ac-placeholder {
+    width: 100%;
+    height: 400px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-muted);
+    font-size: 12px;
+    position: relative;
+    left: 10px;
+}
+
+.ac-placeholder img {
+    object-fit: contain;
+    width: 100%;
+    height: 100%;
+    filter: drop-shadow(8px 8px 10px rgba(0, 0, 0, 0.6));
+}
+
+/* Controls Container */
+.controls-container {
+    background: var(--card-bg);
+    flex-grow: 1;
+    border-radius: 30px 30px 0 0;
+    padding: 25px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+/* Power Card */
+.power-card {
+    background: var(--input-bg);
+    border-radius: 20px;
+    padding: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.power-left {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.power-icon {
+    width: 50px;
+    height: 50px;
+    background: #666;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+}
+
+.power-icon.active {
+    background: var(--primary-orange);
+}
+
+.power-text h3 {
+    font-size: 16px;
+    margin-bottom: 2px;
+    color: var(--text-main);
+}
+
+.power-text p {
+    font-size: 12px;
+    color: var(--text-grey);
+}
+
+.toggle-switch {
+    width: 50px;
+    height: 28px;
+    background: #48484a;
+    border-radius: 14px;
+    position: relative;
+    cursor: pointer;
+}
+
+.toggle-knob {
+    width: 24px;
+    height: 24px;
+    background: white;
+    border-radius: 50%;
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    transition: left 0.3s ease, right 0.3s ease;
+}
+
+/* Mode Section */
+.section-title {
+    font-size: 16px;
+    font-weight: 600;
+    margin-bottom: 15px;
+    color: var(--text-main);
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+
+}
+
+.section-title .innerBtn {
+    padding: 8px 20px;
+    background: var(--input-bg);
+    border-radius: 20px;
+    font-size: 14px;
+    color: var(--text-grey);
+    white-space: nowrap;
+    cursor: pointer;
+    margin-left: auto;
+}
+
+.generalBtn {
+    padding: 8px 20px;
+    background: var(--input-bg);
+    border-radius: 20px;
+    font-size: 14px;
+    color: var(--text-grey);
+    white-space: nowrap;
+    cursor: pointer;
+}
+
+.section-title .innerBtn.active {
+    background: var(--primary-orange);
+    color: white;
+}
+
+.mode-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
+    margin-bottom: 20px;
+}
+
+.mode-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+}
+
+.mode-circle {
+    width: 60px;
+    height: 60px;
+    background: var(--input-bg);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    transition: 0.3s;
+}
+
+.mode-item.active .mode-circle {
+    background: var(--primary-orange);
+    color: white;
+}
+
+.mode-item .mode-circle svg:not(.stroke) path {
+    fill: var(--text-main);
+}
+
+
+.mode-item.active .mode-circle svg:not(.stroke) path {
+    fill: white;
+}
+
+.mode-item .mode-circle svg.stroke path {
+    stroke: var(--text-main);
+}
+
+
+.mode-item.active .mode-circle svg.stroke path {
+    stroke: white;
+}
+
+
+.mode-label {
+    font-size: 12px;
+    color: var(--text-grey);
+}
+
+/* Speed Slider */
+.slider-container {
+    margin-bottom: 25px;
+    display: flex;
+    flex-direction: column;
+}
+
+.slider-track {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 10px;
+}
+
+.fan-icon {
+    font-size: 18px;
+    color: var(--text-grey);
+}
+
+.range-wrapper {
+    flex-grow: 1;
+    height: 6px;
+    background: var(--border-color);
+    border-radius: 3px;
+    position: relative;
+}
+
+.range-fill {
+    position: absolute;
+    left: 0;
+    top: 0;
+    height: 100%;
+    width: 40%;
+    background: var(--primary-orange);
+    border-radius: 3px;
+}
+
+.range-thumb {
+    position: absolute;
+    left: 40%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    width: 20px;
+    height: 20px;
+    background: white;
+    border-radius: 50%;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+    cursor: pointer;
+}
+
+/* Schedule Section */
+.schedule-scroll {
+    display: flex;
+    gap: 10px;
+    overflow-x: auto;
+    padding-bottom: 5px;
+    border-radius: 20px;
+}
+
+/* Hide scrollbar */
+.schedule-scroll::-webkit-scrollbar {
+    display: none;
+}
+
+.time-chip {
+    padding: 10px 20px;
+    background: var(--input-bg);
+    border-radius: 20px;
+    font-size: 14px;
+    color: var(--text-grey);
+    white-space: nowrap;
+    cursor: pointer;
+}
+
+.time-chip.active {
+    background: var(--primary-orange);
+    color: white;
+}
+
+.add-btn {
+    width: 40px;
+    height: 40px;
+    background: var(--input-bg);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    flex-shrink: 0;
+    cursor: pointer;
+    color: var(--text-main);
+}
+
+.loadingIndicator {
+    position: fixed;
+    width: 100%;
+    height: 100vh;
+    background: rgba(0, 0, 0, 0.85);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    z-index: 999;
+    backdrop-filter: blur(10px);
+    color: var(--text-main);
+    transition: opacity 0.5s ease;
+}
+
+.loader {
+    --cloud-color: #4387f4;
+    --arrows-color: #80b1ff;
+    --time-animation: 1s;
+    transform: scale(1);
+    /* You can change the size */
+}
+
+.loader #cloud {
+    width: 100px;
+    height: 100px;
+}
+
+.loader #cloud rect {
+    fill: var(--cloud-color);
+}
+
+.loader #cloud g:nth-child(3) {
+    transform-origin: 50% 72.8938%;
+    fill: var(--arrows-color);
+    filter: drop-shadow(0 0 8px black);
+    animation: rotation var(--time-animation) linear infinite;
+}
+
+.loader #shapes g g circle {
+    animation: cloud calc(var(--time-animation) * 2) linear infinite;
+}
+
+.loader #shapes g g circle:nth-child(2) {
+    animation-delay: calc((var(--time-animation) * 2) / -3);
+}
+
+.loader #shapes g g circle:nth-child(3) {
+    animation-delay: calc((var(--time-animation) * 2) / -1.5);
+}
+
+.loader svg #lines g line {
+    stroke-width: 5;
+    transform-origin: 50% 50%;
+    rotate: -65deg;
+    animation: lines calc(var(--time-animation) / 1.33) linear infinite;
+}
+
+@keyframes rotation {
+    0% {
+        transform: rotate(0deg);
+    }
+
+    50% {
+        transform: rotate(180deg);
+    }
+
+    100% {
+        transform: rotate(360deg);
+    }
+}
+
+@keyframes lines {
+    0% {
+        transform: translateY(-10px);
+    }
+
+    100% {
+        transform: translateY(8px);
+    }
+}
+
+@keyframes cloud {
+    0% {
+        cx: 20;
+        cy: 60;
+        r: 15;
+    }
+
+    50% {
+        cx: 50;
+        cy: 45;
+        r: 20;
+    }
+
+    100% {
+        cx: 80;
+        cy: 60;
+        r: 15;
+    }
+}
+
+#connectText {
+    text-align: center;
+    color: var(--text-main);
+}
+
+body {
+    -webkit-tap-highlight-color: transparent;
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    user-select: none;
+    /* Ensures the app fills the screen behind the notch/status bar */
+    padding-top: env(safe-area-inset-top);
+}
+
+/* Allow interaction only for buttons and sliders */
+button,
+.mode-item,
+.time-chip,
+.toggle-switch,
+.range-wrapper {
+    -webkit-user-select: auto;
+}
+
+.spinner {
+    font-size: 28px;
+    position: relative;
+    display: inline-block;
+    width: 1em;
+    height: 1em;
+}
+
+.spinner.center {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    margin: auto;
+}
+
+.spinner .spinner-blade {
+    position: absolute;
+    left: 0.4629em;
+    bottom: 0;
+    width: 0.074em;
+    height: 0.2777em;
+    border-radius: 0.0555em;
+    background-color: transparent;
+    -webkit-transform-origin: center -0.2222em;
+    -ms-transform-origin: center -0.2222em;
+    transform-origin: center -0.2222em;
+    animation: spinner-fade9234 1s infinite linear;
+}
+
+.spinner .spinner-blade:nth-child(1) {
+    -webkit-animation-delay: 0s;
+    animation-delay: 0s;
+    -webkit-transform: rotate(0deg);
+    -ms-transform: rotate(0deg);
+    transform: rotate(0deg);
+}
+
+.spinner .spinner-blade:nth-child(2) {
+    -webkit-animation-delay: 0.083s;
+    animation-delay: 0.083s;
+    -webkit-transform: rotate(30deg);
+    -ms-transform: rotate(30deg);
+    transform: rotate(30deg);
+}
+
+.spinner .spinner-blade:nth-child(3) {
+    -webkit-animation-delay: 0.166s;
+    animation-delay: 0.166s;
+    -webkit-transform: rotate(60deg);
+    -ms-transform: rotate(60deg);
+    transform: rotate(60deg);
+}
+
+.spinner .spinner-blade:nth-child(4) {
+    -webkit-animation-delay: 0.249s;
+    animation-delay: 0.249s;
+    -webkit-transform: rotate(90deg);
+    -ms-transform: rotate(90deg);
+    transform: rotate(90deg);
+}
+
+.spinner .spinner-blade:nth-child(5) {
+    -webkit-animation-delay: 0.332s;
+    animation-delay: 0.332s;
+    -webkit-transform: rotate(120deg);
+    -ms-transform: rotate(120deg);
+    transform: rotate(120deg);
+}
+
+.spinner .spinner-blade:nth-child(6) {
+    -webkit-animation-delay: 0.415s;
+    animation-delay: 0.415s;
+    -webkit-transform: rotate(150deg);
+    -ms-transform: rotate(150deg);
+    transform: rotate(150deg);
+}
+
+.spinner .spinner-blade:nth-child(7) {
+    -webkit-animation-delay: 0.498s;
+    animation-delay: 0.498s;
+    -webkit-transform: rotate(180deg);
+    -ms-transform: rotate(180deg);
+    transform: rotate(180deg);
+}
+
+.spinner .spinner-blade:nth-child(8) {
+    -webkit-animation-delay: 0.581s;
+    animation-delay: 0.581s;
+    -webkit-transform: rotate(210deg);
+    -ms-transform: rotate(210deg);
+    transform: rotate(210deg);
+}
+
+.spinner .spinner-blade:nth-child(9) {
+    -webkit-animation-delay: 0.664s;
+    animation-delay: 0.664s;
+    -webkit-transform: rotate(240deg);
+    -ms-transform: rotate(240deg);
+    transform: rotate(240deg);
+}
+
+.spinner .spinner-blade:nth-child(10) {
+    -webkit-animation-delay: 0.747s;
+    animation-delay: 0.747s;
+    -webkit-transform: rotate(270deg);
+    -ms-transform: rotate(270deg);
+    transform: rotate(270deg);
+}
+
+.spinner .spinner-blade:nth-child(11) {
+    -webkit-animation-delay: 0.83s;
+    animation-delay: 0.83s;
+    -webkit-transform: rotate(300deg);
+    -ms-transform: rotate(300deg);
+    transform: rotate(300deg);
+}
+
+.spinner .spinner-blade:nth-child(12) {
+    -webkit-animation-delay: 0.913s;
+    animation-delay: 0.913s;
+    -webkit-transform: rotate(330deg);
+    -ms-transform: rotate(330deg);
+    transform: rotate(330deg);
+}
+
+@keyframes spinner-fade9234 {
+    0% {
+        background-color: #69717d;
+    }
+
+    100% {
+        background-color: transparent;
+    }
+}
+
+.popup {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+
+    position: fixed;
+    width: 100%;
+    height: 80%;
+    background: rgba(0, 0, 0, 0.85);
+    color: var(--text-main);
+    z-index: 1000;
+    backdrop-filter: blur(10px);
+    opacity: 1;
+    border-top-left-radius: 20px;
+    border-top-right-radius: 20px;
+    bottom: 0;
+    left: 0;
+    transform: translateY(150vh);
+    transition: transform 0.5s ease, opacity 0.5s ease;
+}
+
+.popup.active {
+    transform: translateY(0);
+
+}
+
+.apple-picker-wrapper {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 20px;
+    max-width: 400px;
+}
+
+.field-label {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-muted);
+    margin-left: 12px;
+    margin-bottom: 8px;
+    display: block;
+    text-transform: uppercase;
+}
+
+/* Main Input Box */
+.display-box {
+    background: var(--card-bg);
+    padding: 12px 16px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    cursor: pointer;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+    transition: all 0.2s ease;
+}
+
+.display-box:active {
+    background: #2c2c2e;
+}
+
+#display {
+    border: none;
+    background: transparent;
+    font-size: 17px;
+    color: var(--apple-blue);
+    cursor: pointer;
+    outline: none;
+    width: 100%;
+}
+
+/* The Dropdown Card */
+.picker-card {
+    margin-top: 10px;
+    background: rgba(44, 44, 46, 0.8);
+    /* Translucent dark gray */
+    backdrop-filter: blur(25px);
+    -webkit-backdrop-filter: blur(25px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 18px;
+    padding: 20px;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6);
+    animation: slideIn 0.3s ease-out;
+}
+
+.hidden {
+    display: none;
+}
+
+.input-group {
+    margin-bottom: 15px;
+}
+
+.input-group small {
+    display: block;
+    font-size: 10px;
+    color: var(--text-muted);
+    margin-bottom: 5px;
+}
+
+/* Styled for Dark Mode browser defaults */
+input[type="date"],
+input[type="time"] {
+    width: 100%;
+    padding: 10px;
+    background-color: var(--input-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    font-size: 16px;
+    color: white;
+    outline-color: var(--apple-blue);
+    color-scheme: dark;
+    /* Forces the browser's internal picker to dark mode */
+}
+
+/* Apple Blue Button */
+#confirm-btn {
+    width: 100%;
+    background-color: var(--apple-blue);
+    color: white;
+    border: none;
+    padding: 12px;
+    border-radius: 12px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: transform 0.1s ease, opacity 0.2s;
+}
+
+#confirm-btn:active {
+    transform: scale(0.98);
+    opacity: 0.8;
+}
+
+@keyframes slideIn {
+    from {
+        transform: translateY(-10px);
+        opacity: 0;
+    }
+
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}

@@ -8,7 +8,7 @@
     body {
         padding: 40px;
         align-items: center;
-        background-color: #d8d8d8;
+        background-color: #2e2e2e;
         /* Slightly darker to make card pop */
     }
 
@@ -87,7 +87,6 @@
         /* Remove mobile border radius */
         padding: 40px;
         justify-content: center;
-        background: #f0f0f0;
         border-radius: 40px;
         /* Slight contrast from left panel */
     }
