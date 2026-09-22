@@ -300,7 +300,7 @@ button:focus-visible,
 input:focus-visible,
 .mode-item:focus-visible,
 .time-chip:focus-visible,
-.range-input:focus-visible {
+.fan-speed-btn:focus-visible {
     outline: 2px solid var(--system-blue);
     outline-offset: 2px;
 }
@@ -451,6 +451,8 @@ input:focus-visible,
     font-size: 13px;
     font-weight: 600;
     color: var(--label-secondary);
+    cursor: pointer;
+    user-select: none;
 }
 
 /* Mode grid — real buttons */
@@ -458,6 +460,24 @@ input:focus-visible,
     display: grid;
     grid-template-columns: repeat(4, 1fr);
     gap: 10px;
+}
+
+.mode-grid.set {
+    border-radius: 20px;
+    border: 1px solid #b1b1b1;
+    animation: borderPulse 1.5s ease-in-out infinite;
+}
+
+@keyframes borderPulse {
+    0%, 100% {
+        border-color: #b1b1b1;
+        box-shadow: 0 0 0 0 rgba(177, 177, 177, 0);
+    }
+
+    50% {
+        border-color: #ffffff;
+        box-shadow: 0 0 10px 2px rgba(177, 177, 177, 0.5);
+    }
 }
 
 .mode-item {
@@ -483,6 +503,10 @@ input:focus-visible,
     transition: background-color 0.2s ease, color 0.2s ease;
 }
 
+.mode-grid.set .mode-item .mode-circle {
+    background: #4f4f4f;
+}
+
 .mode-item.active .mode-circle {
     background: var(--accent);
     color: var(--accent-ink);
@@ -498,64 +522,39 @@ input:focus-visible,
     color: var(--label);
 }
 
-/* Fan speed — native range input, fully keyboard + screen-reader operable */
-.slider-track {
-    display: flex;
-    align-items: center;
-    gap: 12px;
+/* Fan speed — two-segment control (Auto / Turbo) */
+.fan-speed-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
 }
 
-.fan-icon {
-    color: var(--label-tertiary);
+.fan-speed-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    min-height: 48px;
+    padding: 12px 16px;
+    background: var(--control);
+    color: var(--label-secondary);
+    border: none;
+    border-radius: var(--radius-pill);
+    font-size: 14px;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    cursor: pointer;
+    transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.fan-speed-icon {
     display: flex;
     flex-shrink: 0;
 }
 
-.range-input {
-    -webkit-appearance: none;
-    appearance: none;
-    flex: 1;
-    height: 6px;
-    border-radius: 3px;
-    background: linear-gradient(to right,
-            var(--accent) 0%,
-            var(--accent) var(--fill, 40%),
-            var(--control) var(--fill, 40%),
-            var(--control) 100%);
-    cursor: pointer;
-}
-
-.range-input::-webkit-slider-thumb {
-    -webkit-appearance: none;
-    width: 24px;
-    height: 24px;
-    border-radius: 50%;
-    background: #ffffff;
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
-    cursor: pointer;
-    margin-top: 0;
-}
-
-.range-input::-moz-range-thumb {
-    width: 24px;
-    height: 24px;
-    border: none;
-    border-radius: 50%;
-    background: #ffffff;
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
-    cursor: pointer;
-}
-
-.range-input::-moz-range-track {
-    height: 6px;
-    border-radius: 3px;
-    background: var(--control);
-}
-
-.range-input::-moz-range-progress {
-    height: 6px;
-    border-radius: 3px;
+.fan-speed-btn.active {
     background: var(--accent);
+    color: var(--accent-ink);
 }
 
 /* Schedule chips */
