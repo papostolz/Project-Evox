@@ -6,7 +6,7 @@
    https://your-server/ac/... on the new Express server.
    ========================================================= */
 
-const API_BASE = "http://ac.evoxs.xyz"; // <-- set this to your deployed server's origin
+const API_BASE = "https://ac.evoxs.xyz";
 const REQUEST_TIMEOUT_MS = 10000;
 
 let storage = {};
