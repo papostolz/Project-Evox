@@ -557,6 +557,44 @@ input:focus-visible,
     color: var(--accent-ink);
 }
 
+/* =========================================================
+   Schedule cards (Turn On / Turn Off Automatically)
+   ========================================================= */
+.schedule-card {
+    background: var(--elevated);
+    border: 1px solid var(--separator);
+    border-radius: var(--radius-lg);
+    padding: 20px 20px 18px;
+}
+
+.schedule-card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 14px;
+}
+
+.schedule-card-header .section-title {
+    margin-bottom: 0;
+}
+
+.schedule-state {
+    padding: 6px 14px;
+    border-radius: var(--radius-pill);
+    background: var(--control);
+    color: var(--label-secondary);
+    font-size: 13px;
+    font-weight: 600;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+.schedule-state.active {
+    background: var(--accent);
+    color: var(--accent-ink);
+}
+
 /* Schedule chips */
 .schedule-scroll {
     display: flex;
@@ -571,8 +609,8 @@ input:focus-visible,
 }
 
 .time-chip {
-    padding: 10px 18px;
-    min-height: 40px;
+    padding: 11px 18px;
+    min-height: 44px;
     background: var(--control);
     border: none;
     border-radius: var(--radius-pill);
@@ -590,8 +628,8 @@ input:focus-visible,
 }
 
 .add-btn {
-    width: 40px;
-    height: 40px;
+    width: 44px;
+    height: 44px;
     border-radius: 50%;
     background: var(--control);
     border: none;
@@ -751,93 +789,141 @@ input:focus-visible,
     cursor: pointer;
 }
 
-.display-box {
+/* One straightforward flow: action → time → repeat → summary → save */
+.sheet-body {
+    display: flex;
+    flex-direction: column;
+    gap: 22px;
+}
+
+.field-group {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.field-label {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--label-secondary);
+}
+
+/* Segmented control — reuses the app's established
+   accent-fill "active" pattern (time-chip, mode-item,
+   fan-speed-btn) instead of introducing a new one. */
+.segmented {
+    display: flex;
+    gap: 4px;
+    background: var(--control);
+    border-radius: var(--radius-pill);
+    padding: 4px;
+}
+
+.segmented-btn {
+    flex: 1;
+    min-height: 44px;
+    border: none;
+    border-radius: var(--radius-pill);
+    background: transparent;
+    color: var(--label-secondary);
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.segmented-btn.active {
+    background: var(--accent);
+    color: var(--accent-ink);
+}
+
+/* Native time input, styled to feel like a first-class control
+   rather than the old display-box → picker accordion. */
+.field-time-input {
     width: 100%;
+    min-height: 52px;
+    padding: 12px 16px;
     background: var(--control);
     border: none;
-    padding: 14px 16px;
-    border-radius: var(--radius-sm);
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    cursor: pointer;
-    font-size: 16px;
-    color: var(--system-blue);
-    text-align: left;
-}
-
-.chevron {
-    width: 8px;
-    height: 8px;
-    border-right: 2px solid var(--label-tertiary);
-    border-bottom: 2px solid var(--label-tertiary);
-    transform: rotate(45deg);
-    transition: transform 0.2s ease;
-}
-
-.display-box[aria-expanded="true"] .chevron {
-    transform: rotate(-135deg);
-}
-
-.picker-card {
-    margin-top: 12px;
-    background: var(--control);
-    border-radius: var(--radius-sm);
-    padding: 18px;
-}
-
-.picker-card.hidden {
-    display: none;
-}
-
-.input-group {
-    display: block;
-    margin-bottom: 14px;
-}
-
-.input-group span {
-    display: block;
-    font-size: 11px;
+    border-radius: var(--radius-md);
+    font-size: 20px;
     font-weight: 600;
-    letter-spacing: 0.03em;
-    text-transform: uppercase;
-    color: var(--label-tertiary);
-    margin-bottom: 6px;
+    font-variant-numeric: tabular-nums;
+    color: var(--label);
+    color-scheme: dark;
 }
 
-.input-group input {
+@media (prefers-color-scheme: light) {
+    .field-time-input {
+        color-scheme: light;
+    }
+}
+
+.date-field {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-top: 12px;
+}
+
+.date-field input {
     width: 100%;
-    padding: 11px 10px;
-    background: var(--elevated);
-    border: 1px solid var(--separator);
-    border-radius: 10px;
+    min-height: 48px;
+    padding: 12px 14px;
+    background: var(--control);
+    border: none;
+    border-radius: var(--radius-md);
     font-size: 16px;
     color: var(--label);
     color-scheme: dark;
 }
 
 @media (prefers-color-scheme: light) {
-    .input-group input {
+    .date-field input {
         color-scheme: light;
     }
 }
 
+.hidden {
+    display: none !important;
+}
+
+/* Live, human-readable summary of the schedule being built */
+.schedule-summary {
+    text-align: center;
+    padding: 14px 16px;
+    background: var(--control);
+    border-radius: var(--radius-md);
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--label-secondary);
+}
+
 .btn-primary {
     width: 100%;
-    min-height: 46px;
-    background-color: var(--system-blue);
-    color: white;
+    min-height: 50px;
+    background-color: var(--accent);
+    color: var(--accent-ink);
     border: none;
-    border-radius: var(--radius-sm);
+    border-radius: var(--radius-md);
     font-size: 16px;
-    font-weight: 600;
+    font-weight: 700;
     cursor: pointer;
     transition: transform 0.1s ease, opacity 0.2s ease;
 }
 
 .btn-primary:active {
     transform: scale(0.98);
-    opacity: 0.85;
+    opacity: 0.9;
+}
+
+.btn-primary:disabled {
+    opacity: 0.4;
+    cursor: default;
+}
+
+.save-schedule-btn {
+    margin-top: 2px;
 }
 
 .sheet-status {
@@ -1023,7 +1109,7 @@ input:focus-visible,
 
     .sheet {
         border-radius: 24px;
-        max-width: 380px;
+        max-width: 400px;
     }
 
     .sheet-grabber {

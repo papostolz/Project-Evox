@@ -167,22 +167,41 @@
                 </button>
             </div>
 
-            <button type="button" class="display-box" id="display-container" aria-expanded="false"
-                aria-controls="picker-container">
-                <span id="display">Select date &amp; time</span>
-                <span class="chevron" aria-hidden="true"></span>
-            </button>
+            <div class="sheet-body">
+                <div class="field-group">
+                    <span class="field-label" id="actionFieldLabel">Action</span>
+                    <div class="segmented" role="radiogroup" aria-labelledby="actionFieldLabel" id="actionSegmented">
+                        <button type="button" class="segmented-btn" data-action="on" role="radio"
+                            aria-checked="false">Turn On</button>
+                        <button type="button" class="segmented-btn" data-action="off" role="radio"
+                            aria-checked="false">Turn Off</button>
+                    </div>
+                </div>
 
-            <div id="picker-container" class="picker-card hidden">
-                <label class="input-group">
-                    <span>Date</span>
-                    <input type="date" id="date-input">
-                </label>
-                <label class="input-group">
-                    <span>Time</span>
-                    <input type="time" id="time-input">
-                </label>
-                <button id="confirm-btn" class="btn-primary">Done</button>
+                <div class="field-group">
+                    <label class="field-label" for="time-input">Time</label>
+                    <input type="time" id="time-input" class="field-time-input" required>
+                </div>
+
+                <div class="field-group">
+                    <span class="field-label" id="repeatFieldLabel">Repeat</span>
+                    <div class="segmented" role="radiogroup" aria-labelledby="repeatFieldLabel" id="repeatSegmented">
+                        <button type="button" class="segmented-btn" data-repeat="daily" role="radio"
+                            aria-checked="false">Every day</button>
+                        <button type="button" class="segmented-btn" data-repeat="once" role="radio"
+                            aria-checked="false">Once</button>
+                    </div>
+                    <label class="field-label date-field hidden" id="dateField" for="date-input">
+                        Date
+                        <input type="date" id="date-input">
+                    </label>
+                </div>
+
+                <p class="schedule-summary" id="scheduleSummary" aria-live="polite">Choose a time to see a summary.
+                </p>
+
+                <button type="button" id="confirm-btn" class="btn-primary save-schedule-btn" disabled>Save
+                    Schedule</button>
             </div>
 
             <div class="sheet-status" id="spinner2" aria-live="polite">
@@ -365,14 +384,17 @@
                 </div>
             </section>
 
-            <section aria-labelledby="offHeading">
-                <h2 class="section-title" id="offHeading">Turn off automatically</h2>
+            <section class="schedule-card" aria-labelledby="offHeading">
+                <div class="schedule-card-header">
+                    <h2 class="section-title" id="offHeading">Turn Off Automatically</h2>
+                    <span class="schedule-state" id="offState">Off</span>
+                </div>
                 <div class="schedule-scroll turn-off-by" id="turn-off-by">
                     <button type="button" class="time-chip active" data-time="Off">Off</button>
                     <button type="button" class="time-chip" data-time="13:00">13:00</button>
                     <button type="button" class="time-chip" data-time="14:00">14:00</button>
                     <button type="button" class="time-chip" data-time="15:00">15:00</button>
-                    <button type="button" class="add-btn" data-schedule="off" aria-label="Add a custom turn-off time">
+                    <button type="button" class="add-btn" data-schedule="off" aria-label="Add schedule to turn off">
                         <svg width="15" height="15" viewBox="0 0 24 24" fill="none">
                             <path d="M4 12H20M12 4V20" stroke="currentColor" stroke-width="2" stroke-linecap="round"
                                 stroke-linejoin="round"></path>
@@ -381,14 +403,17 @@
                 </div>
             </section>
 
-            <section aria-labelledby="onHeading">
-                <h2 class="section-title" id="onHeading">Turn on automatically</h2>
+            <section class="schedule-card" aria-labelledby="onHeading">
+                <div class="schedule-card-header">
+                    <h2 class="section-title" id="onHeading">Turn On Automatically</h2>
+                    <span class="schedule-state" id="onState">Off</span>
+                </div>
                 <div class="schedule-scroll turn-on-by" id="turn-on-by">
                     <button type="button" class="time-chip active" data-time="Off">Off</button>
                     <button type="button" class="time-chip" data-time="13:00">13:00</button>
                     <button type="button" class="time-chip" data-time="14:00">14:00</button>
                     <button type="button" class="time-chip" data-time="15:00">15:00</button>
-                    <button type="button" class="add-btn" data-schedule="on" aria-label="Add a custom turn-on time">
+                    <button type="button" class="add-btn" data-schedule="on" aria-label="Add schedule to turn on">
                         <svg width="15" height="15" viewBox="0 0 24 24" fill="none">
                             <path d="M4 12H20M12 4V20" stroke="currentColor" stroke-width="2" stroke-linecap="round"
                                 stroke-linejoin="round"></path>

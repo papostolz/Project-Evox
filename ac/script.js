@@ -420,6 +420,36 @@ async function removeAllActions(type) {
   }
 }
 
+// Turns a raw chip value ("Off", "14:00", or a full
+// "DD-MM-YYYY/HH:mm" custom date) into the short, human-readable
+// text shown in each section's state badge. Purely cosmetic —
+// never touches the underlying schedule value.
+function formatScheduleState(raw) {
+  if (!raw || raw === "Off") return "Off";
+  const customMatch = raw.match(/^(\d{2})-(\d{2})-(\d{4})\/(\d{2}:\d{2})$/);
+  if (customMatch) {
+    const [, day, month, , time] = customMatch;
+    const MONTHS = [
+      "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+      "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
+    ];
+    const monthLabel = MONTHS[Number(month) - 1] || month;
+    return `${time} · ${day} ${monthLabel}`;
+  }
+  return `Daily · ${raw}`;
+}
+
+function updateScheduleState(container) {
+  const isOff = container.classList.contains("turn-off-by");
+  const stateEl = document.getElementById(isOff ? "offState" : "onState");
+  if (!stateEl) return;
+
+  const active = container.querySelector(".time-chip.active");
+  const raw = active ? active.dataset.time : "Off";
+  stateEl.textContent = formatScheduleState(raw);
+  stateEl.classList.toggle("active", raw !== "Off");
+}
+
 function selectTime(chip) {
   const group = chip.closest(".schedule-scroll");
   const isOff = group.classList.contains("turn-off-by");
@@ -430,6 +460,7 @@ function selectTime(chip) {
     .querySelectorAll(".time-chip")
     .forEach((c) => c.classList.remove("active"));
   chip.classList.add("active");
+  updateScheduleState(group);
 
   const time = chip.dataset.time;
   if (time === "Off") {
@@ -470,12 +501,14 @@ function rebuildScheduleRow(container, activeCustomTime) {
   addBtn.setAttribute(
     "aria-label",
     container.classList.contains("turn-off-by")
-      ? "Add a custom turn-off time"
-      : "Add a custom turn-on time",
+      ? "Add schedule to turn off"
+      : "Add schedule to turn on",
   );
   addBtn.innerHTML =
     '<svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M4 12H20M12 4V20" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></svg>';
   container.appendChild(addBtn);
+
+  updateScheduleState(container);
 }
 
 async function getActiveSchedules() {
@@ -532,24 +565,76 @@ async function fixLock() {
 // ---------------------------------------------------------
 const timePopup = document.getElementById("timePopup");
 const scheduleLabel = document.getElementById("ac-schedule-label");
-const displayBox = document.getElementById("display-container");
-const pickerContainer = document.getElementById("picker-container");
-const displayInput = document.getElementById("display");
+const actionSegmented = document.getElementById("actionSegmented");
+const repeatSegmented = document.getElementById("repeatSegmented");
+const dateField = document.getElementById("dateField");
 const confirmBtn = document.getElementById("confirm-btn");
 const dateInput = document.getElementById("date-input");
 const timeInput = document.getElementById("time-input");
+const scheduleSummary = document.getElementById("scheduleSummary");
 const sheetStatus = document.getElementById("spinner2");
 const sheetClose = document.getElementById("sheetClose");
 let lastFocusedElement = null;
 
+const DAY_MONTHS = [
+  "January", "February", "March", "April", "May", "June",
+  "July", "August", "September", "October", "November", "December",
+];
+
+function getSheetAction() {
+  const active = actionSegmented.querySelector(".segmented-btn.active");
+  return active ? active.dataset.action : "on";
+}
+
+function getSheetRepeat() {
+  const active = repeatSegmented.querySelector(".segmented-btn.active");
+  return active ? active.dataset.repeat : "daily";
+}
+
+function setSegmentedActive(group, value, datasetKey) {
+  group.querySelectorAll(".segmented-btn").forEach((btn) => {
+    const isActive = btn.dataset[datasetKey] === value;
+    btn.classList.toggle("active", isActive);
+    btn.setAttribute("aria-checked", String(isActive));
+  });
+}
+
+// Recomputes the "Turn ON at 08:00 every day" style summary and
+// keeps Save disabled until there's a valid time to schedule.
+function updateScheduleSummary() {
+  const action = getSheetAction();
+  const repeat = getSheetRepeat();
+  const time = timeInput.value;
+
+  dateField.classList.toggle("hidden", repeat !== "once");
+
+  if (!time || (repeat === "once" && !dateInput.value)) {
+    scheduleSummary.textContent = "Choose a time to see a summary.";
+    confirmBtn.disabled = true;
+    return;
+  }
+
+  const actionLabel = action === "on" ? "Turn ON" : "Turn OFF";
+  let whenLabel = "every day";
+  if (repeat === "once") {
+    const [year, month, day] = dateInput.value.split("-");
+    const monthLabel = DAY_MONTHS[Number(month) - 1] || month;
+    whenLabel = `on ${Number(day)} ${monthLabel}`;
+  }
+  scheduleSummary.textContent = `${actionLabel} at ${time} ${whenLabel}`;
+  confirmBtn.disabled = false;
+}
+
 function openSchedule(addBtn) {
   const kind = addBtn.dataset.schedule; // "on" | "off"
-  scheduleLabel.innerText = kind === "on" ? "Turn On By" : "Turn Off By";
-  scheduleLabel.dataset.kind = kind;
+  scheduleLabel.innerText = "Schedule";
 
-  displayInput.value = "Select date & time";
-  pickerContainer.classList.add("hidden");
-  displayBox.setAttribute("aria-expanded", "false");
+  setSegmentedActive(actionSegmented, kind, "action");
+  setSegmentedActive(repeatSegmented, "daily", "repeat");
+  dateField.classList.add("hidden");
+  timeInput.value = "";
+  dateInput.value = "";
+  updateScheduleSummary();
   sheetStatus.classList.remove("visible");
 
   lastFocusedElement = addBtn;
@@ -571,32 +656,49 @@ document.addEventListener("keydown", (e) => {
     closeSheet();
 });
 
-displayBox.addEventListener("click", () => {
-  const isHidden = pickerContainer.classList.toggle("hidden");
-  displayBox.setAttribute("aria-expanded", String(!isHidden));
+actionSegmented.addEventListener("click", (e) => {
+  const btn = e.target.closest(".segmented-btn");
+  if (!btn) return;
+  setSegmentedActive(actionSegmented, btn.dataset.action, "action");
+  updateScheduleSummary();
 });
 
-confirmBtn.addEventListener("click", () => {
-  const dateValue = dateInput.value; // YYYY-MM-DD
+repeatSegmented.addEventListener("click", (e) => {
+  const btn = e.target.closest(".segmented-btn");
+  if (!btn) return;
+  setSegmentedActive(repeatSegmented, btn.dataset.repeat, "repeat");
+  updateScheduleSummary();
+});
+
+timeInput.addEventListener("input", updateScheduleSummary);
+dateInput.addEventListener("input", updateScheduleSummary);
+
+confirmBtn.addEventListener("click", async () => {
   const timeValue = timeInput.value; // HH:mm
-  if (!dateValue || !timeValue) return;
+  if (!timeValue) return;
 
-  const [year, month, day] = dateValue.split("-");
-  const customFormat = `${day}-${month}-${year}/${timeValue}`;
-  displayInput.value = customFormat;
+  const repeat = getSheetRepeat();
+  const onOff = getSheetAction();
 
-  pickerContainer.classList.add("hidden");
-  displayBox.setAttribute("aria-expanded", "false");
+  let time = timeValue;
+  let custom = false;
+
+  if (repeat === "once") {
+    const dateValue = dateInput.value; // YYYY-MM-DD
+    if (!dateValue) return;
+    const [year, month, day] = dateValue.split("-");
+    time = `${day}-${month}-${year}/${timeValue}`;
+    custom = true;
+  }
+
   sheetStatus.classList.add("visible");
-
-  // Fixed from the original: the comparison used to check the label
-  // against an uppercased string ("Turn On By".toUpperCase()) while
-  // the label itself is title case, so it always evaluated to false
-  // and every custom schedule was silently saved as "off". Comparing
-  // the stored kind directly restores the intended on/off behaviour.
-  const onOff = scheduleLabel.dataset.kind === "on" ? "on" : "off";
-
-  processSchedule(onOff, customFormat, true);
+  confirmBtn.disabled = true;
+  // processSchedule only closes the sheet itself for custom (one-off)
+  // schedules, so close it here once the request settles — this
+  // covers the "every day" path too without touching that function.
+  await processSchedule(onOff, time, custom);
+  sheetStatus.classList.remove("visible");
+  closeSheet();
 });
 
 // ---------------------------------------------------------
